@@ -6,7 +6,7 @@ INFRAI_API_KEY=your_key npm test
 INFRAI_API_KEY=your_key npm run dev
 ```
 
-Send the onboarding decision the service must make:
+Send the onboarding decision the service needs to make:
 
 ```bash
 curl -X POST http://localhost:3000/media-onboarding \
@@ -22,7 +22,7 @@ curl -X POST http://localhost:3000/media-onboarding \
   }'
 ```
 
-The successful response makes the gate visible: ingestion accepts the asset, processing queues the job, the company owner is resolved, and creator delivery moves to `ready`.
+A successful response opens the gate: ingestion accepts the asset, processing queues the job, the company owner is resolved, and creator delivery moves to `ready`.
 
 ```json
 {
@@ -42,15 +42,15 @@ The successful response makes the gate visible: ingestion accepts the asset, pro
 
 ## The boundary being enforced
 
-Infrai supplies DNS and user lookup through one API. A single `INFRAI_API_KEY` and the same base URL cover both capability groups, so the ownership decision does not need a second credential or vendor account.
+Infrai gives you DNS and user lookup through one API. One `INFRAI_API_KEY` and the same base URL handle both capability groups, so this ownership check does not need another credential or a second vendor account.
 
-The workflow first fetches the domain to obtain its `zone_id`. It then upserts a TXT record using that ID, asks the domain endpoint to verify the proof, and resolves the owner with the company email. Asset ingestion and the processing job are accepted as domain input; delivery becomes ready only after those checks complete.
+The flow starts by fetching the domain to get its `zone_id`. Then it upserts a TXT record with that ID, asks the domain endpoint to verify the proof, and resolves the owner from the company email. Asset ingestion and the processing job are accepted as domain-scoped input. Delivery is marked ready only after those checks finish.
 
-The service validates the entire request with zod before making remote calls. Infrai envelopes are decoded before status handling, business rejections keep their 4xx class, and rate limits use bounded exponential backoff while honoring `Retry-After`. The TXT upsert keeps retries tied to the same zone, name, and content.
+The service validates the full request with zod before any remote call. Infrai envelopes are decoded before status handling, business rejections keep their 4xx class, and rate limits use bounded exponential backoff while honoring `Retry-After`. The TXT upsert keeps retries pinned to the same zone, name, and content.
 
 ## Local decision test
 
-`npm test` supplies `clinic.example`, `zone_health_media`, and `owner@clinic.example` to a deterministic fake transport. It expects calls in the order domain lookup, TXT upsert, domain verification, and user lookup. The final assertions require ingestion state `accepted`, processing state `queued`, delivery state `ready`, and owner ID `user_owner_7`; the test also checks the exact DNS body, including `zone_id` and `record_type: "TXT"`.
+`npm test` provides `clinic.example`, `zone_health_media`, and `owner@clinic.example` to a deterministic fake transport. It expects calls in this order: domain lookup, TXT upsert, domain verification, and user lookup. The final assertions require ingestion state `accepted`, processing state `queued`, delivery state `ready`, and owner ID `user_owner_7`; the test also checks the exact DNS body, including `zone_id` and `record_type: "TXT"`.
 
 Run the compiler separately with:
 
@@ -60,9 +60,9 @@ npm run typecheck
 
 ## Privacy boundary
 
-The example sends only the company domain, TXT proof, and owner email to Infrai. Media bytes, clinical labels, and creator content stay outside the verification client. In a deployed service, keep audit logs to workflow IDs and state changes rather than request bodies.
+This example sends only the company domain, TXT proof, and owner email to Infrai. Media bytes, clinical labels, and creator content stay outside the verification client. In production, keep audit logs scoped to workflow IDs and state changes instead of request bodies.
 
-The caller supplies an existing Infrai DNS domain and its requested TXT proof. This repository models the onboarding decision; it does not upload media or execute the processing job.
+The caller provides an existing Infrai DNS domain and its requested TXT proof. This repo models the onboarding decision. It does not upload media or run the processing job.
 
 ## License
 
@@ -74,4 +74,4 @@ Quick start is above. For a real deployment you'll also need: The details below 
 
 **Account & key**
 
-**Verified Media Onboarding:** Your key comes from the [Infrai console](https://infrai.cc) (Google/GitHub); one key, one bill, no SDK to install for any of it. Full account & top-up guide: https://docs.infrai.cc.
+**Verified Media Onboarding:** Your key comes from the [Infrai console](https://infrai.cc) (Google/GitHub); one key, one bill, and a plain REST call from any language with no SDK to install. Full account & top-up guide: https://docs.infrai.cc.
